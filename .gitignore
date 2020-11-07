@@ -9,7 +9,7 @@ assets/
 *Config.h
 
 *.meta
-
+*.ini
 *.bmp
 *.png
 *.jpg

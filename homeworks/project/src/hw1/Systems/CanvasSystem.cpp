@@ -3,9 +3,11 @@
 #include "../Components/CanvasData.h"
 
 #include <_deps/imgui/imgui.h>
-
+#include"mylib.h"
 using namespace Ubpa;
-
+int num_hidden=3;
+int bound[2];
+myRBF rbf(1, num_hidden);
 void CanvasSystem::OnUpdate(Ubpa::UECS::Schedule& schedule) {
 	schedule.RegisterCommand([](Ubpa::UECS::World* w) {
 		auto data = w->entityMngr.GetSingleton<CanvasData>();
@@ -14,6 +16,7 @@ void CanvasSystem::OnUpdate(Ubpa::UECS::Schedule& schedule) {
 
 		if (ImGui::Begin("Canvas")) {
 			ImGui::Checkbox("Enable grid", &data->opt_enable_grid);
+			ImGui::DragInt("num hidden", &num_hidden);
 			ImGui::Checkbox("Enable context menu", &data->opt_enable_context_menu);
 			ImGui::Text("Mouse Left: drag to add lines,\nMouse Right: drag to scroll, click for context menu.");
 
@@ -47,23 +50,41 @@ void CanvasSystem::OnUpdate(Ubpa::UECS::Schedule& schedule) {
 			const bool is_active = ImGui::IsItemActive();   // Held
 			const ImVec2 origin(canvas_p0.x + data->scrolling[0], canvas_p0.y + data->scrolling[1]); // Lock scrolled origin
 			const pointf2 mouse_pos_in_canvas(io.MousePos.x - origin.x, io.MousePos.y - origin.y);
-
+			bool changed ;
+			changed = false;
 			// Add first and second point
 			if (is_hovered && !data->adding_line && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 			{
+				if (data->points.empty()) {
+					bound[0] = mouse_pos_in_canvas[0];
+					bound[1] = mouse_pos_in_canvas[0];
+				}
 				data->points.push_back(mouse_pos_in_canvas);
-				data->points.push_back(mouse_pos_in_canvas);
-				data->adding_line = true;
+				if (mouse_pos_in_canvas[0] > bound[1]) {
+					bound[1] = mouse_pos_in_canvas[0];
+				}
+				if (mouse_pos_in_canvas[0] < bound[0]) {
+					bound[0] = mouse_pos_in_canvas[0];
+				}
+				changed = true;
 			}
-			if (data->adding_line)
-			{
-				data->points.back() = mouse_pos_in_canvas;
-				if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
-					data->adding_line = false;
+			//Eigen::MatrixXd x(data->points.size(),data->points.size());
+			Eigen::VectorXd X(data->points.size());
+			Eigen::MatrixXd Y(data->points.size(),1);
+			
+			for (int i = 0; i < data->points.size(); i++) {
+				X[i] = data->points[i][0];
+				Y(i,0) = data->points[i][1];
 			}
-
-			// Pan (we use a zero mouse threshold when there's no context menu)
-			// You may decide to make that threshold dynamic based on whether the mouse is hovering something etc.
+			if (X.size() >= 2 &&changed) {
+				myRBF temp(X.size(), num_hidden);
+				rbf = temp;
+				rbf.train(X, Y);
+			}
+			for (float i = bound[0]; i < bound[1]; i += 1) {
+				draw_list->AddLine(ImVec2(origin.x+i,origin.y+ (float)rbf.getOutput(i)), ImVec2(origin.x+i + 1,origin.y+ rbf.getOutput(i + 1)), IM_COL32(255, 255, 0, 255), 2.0f);
+			}
+			
 			const float mouse_threshold_for_pan = data->opt_enable_context_menu ? -1.0f : 0.0f;
 			if (is_active && ImGui::IsMouseDragging(ImGuiMouseButton_Right, mouse_threshold_for_pan))
 			{
@@ -95,8 +116,10 @@ void CanvasSystem::OnUpdate(Ubpa::UECS::Schedule& schedule) {
 				for (float y = fmodf(data->scrolling[1], GRID_STEP); y < canvas_sz.y; y += GRID_STEP)
 					draw_list->AddLine(ImVec2(canvas_p0.x, canvas_p0.y + y), ImVec2(canvas_p1.x, canvas_p0.y + y), IM_COL32(200, 200, 200, 40));
 			}
-			for (int n = 0; n < data->points.size(); n += 2)
-				draw_list->AddLine(ImVec2(origin.x + data->points[n][0], origin.y + data->points[n][1]), ImVec2(origin.x + data->points[n + 1][0], origin.y + data->points[n + 1][1]), IM_COL32(255, 255, 0, 255), 2.0f);
+			/* (int n = 0; n < data->points.size()-1&&data->points.size()>=2; n += 1)
+				draw_list->AddLine(ImVec2(origin.x + data->points[n][0], origin.y + data->points[n][1]), ImVec2(origin.x + data->points[n + 1][0], origin.y + data->points[n + 1][1]), IM_COL32(255, 255, 0, 255), 2.0f);*/
+			for (int n = 0; n < data->points.size() && data->points.size() >= 1; n += 1)
+				draw_list->AddCircle(ImVec2(origin.x + data->points[n][0], origin.y + data->points[n][1]), 3.f, IM_COL32(255, 255, 0, 255), 0, 6.f);
 			draw_list->PopClipRect();
 		}
 

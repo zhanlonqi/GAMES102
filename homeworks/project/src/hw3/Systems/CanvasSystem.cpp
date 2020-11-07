@@ -4,8 +4,15 @@
 
 #include <_deps/imgui/imgui.h>
 
-using namespace Ubpa;
+#include<string>
 
+#include"mylib.h"
+using namespace Ubpa;
+bool exponiential = false;
+bool gauss = false;
+bool interpolation=false;
+bool MinE = false;
+int ceta = 1;
 void CanvasSystem::OnUpdate(Ubpa::UECS::Schedule& schedule) {
 	schedule.RegisterCommand([](Ubpa::UECS::World* w) {
 		auto data = w->entityMngr.GetSingleton<CanvasData>();
@@ -15,8 +22,12 @@ void CanvasSystem::OnUpdate(Ubpa::UECS::Schedule& schedule) {
 		if (ImGui::Begin("Canvas")) {
 			ImGui::Checkbox("Enable grid", &data->opt_enable_grid);
 			ImGui::Checkbox("Enable context menu", &data->opt_enable_context_menu);
-			ImGui::Text("Mouse Left: drag to add lines,\nMouse Right: drag to scroll, click for context menu.");
-
+			ImGui::Checkbox("exponiential ", &exponiential);
+			ImGui::Checkbox("gauss ", &gauss);
+			ImGui::Checkbox("interpolation", &interpolation);
+			ImGui::Checkbox("MinE", &MinE);
+			ImGui::DragInt("Ceta", &ceta, 1.f, 1, 200, "%d", 0);
+			ImGui::Text("mouse Left: drag to add lines,\nMouse Right: drag to scroll, click for context menu.");
 			// Typically you would use a BeginChild()/EndChild() pair to benefit from a clipping region + own scrolling.
 			// Here we demonstrate that this can be replaced by simple offsetting + custom drawing + PushClipRect/PopClipRect() calls.
 			// To use a child window instead we could use, e.g:
@@ -52,15 +63,8 @@ void CanvasSystem::OnUpdate(Ubpa::UECS::Schedule& schedule) {
 			if (is_hovered && !data->adding_line && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 			{
 				data->points.push_back(mouse_pos_in_canvas);
-				data->points.push_back(mouse_pos_in_canvas);
-				data->adding_line = true;
 			}
-			if (data->adding_line)
-			{
-				data->points.back() = mouse_pos_in_canvas;
-				if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
-					data->adding_line = false;
-			}
+				
 
 			// Pan (we use a zero mouse threshold when there's no context menu)
 			// You may decide to make that threshold dynamic based on whether the mouse is hovering something etc.
@@ -95,8 +99,43 @@ void CanvasSystem::OnUpdate(Ubpa::UECS::Schedule& schedule) {
 				for (float y = fmodf(data->scrolling[1], GRID_STEP); y < canvas_sz.y; y += GRID_STEP)
 					draw_list->AddLine(ImVec2(canvas_p0.x, canvas_p0.y + y), ImVec2(canvas_p1.x, canvas_p0.y + y), IM_COL32(200, 200, 200, 40));
 			}
-			for (int n = 0; n < data->points.size(); n += 2)
-				draw_list->AddLine(ImVec2(origin.x + data->points[n][0], origin.y + data->points[n][1]), ImVec2(origin.x + data->points[n + 1][0], origin.y + data->points[n + 1][1]), IM_COL32(255, 255, 0, 255), 2.0f);
+
+			if (data->points.size() >= 2&&exponiential&&interpolation) {
+				adopt ex(data->points,"exponiential","interpolation",ceta);
+
+				for (float i = 0; i < 1.f ; i += 0.01) {
+					draw_list->AddLine(ImVec2(ex.getResult(i)[0] + origin.x, ex.getResult(i)[1] + origin.y), ImVec2(ex.getResult(i + 0.01)[0] + origin.x, ex.getResult(i + 0.01)[1] + origin.y), IM_COL32(255, 155, 0, 255), 2.0f);
+					//draw_list->AddLine(ImVec2(i *100+ origin.x, ex.getResult(i)[1] + origin.y), ImVec2(i*100+1 + origin.x, ex.getResult(i + 0.01)[1] + origin.y), IM_COL32(255, 255, 0, 255), 2.0f);
+				}
+			}
+			if (data->points.size() >= 2 && exponiential&&MinE) {
+				adopt ex(data->points, "exponiential", "MinE",ceta);
+
+				for (float i = 0; i < 1.f; i += 0.01) {
+					draw_list->AddLine(ImVec2(ex.getResult(i)[0] + origin.x, ex.getResult(i)[1] + origin.y), ImVec2(ex.getResult(i + 0.01)[0] + origin.x, ex.getResult(i + 0.01)[1] + origin.y), IM_COL32(255, 155, 0, 255), 2.0f);
+					//draw_list->AddLine(ImVec2(i *100+ origin.x, ex.getResult(i)[1] + origin.y), ImVec2(i*100+1 + origin.x, ex.getResult(i + 0.01)[1] + origin.y), IM_COL32(255, 255, 0, 255), 2.0f);
+				}
+			}
+			if (data->points.size() >= 2 && gauss&&interpolation) {
+				adopt ex1(data->points, "gauss","interpolation",ceta);
+
+				for (float i = 0; i < 1.f; i += 0.01) {
+					draw_list->AddLine(ImVec2(ex1.getResult(i)[0] + origin.x, ex1.getResult(i)[1] + origin.y), ImVec2(ex1.getResult(i + 0.01)[0] + origin.x, ex1.getResult(i + 0.01)[1] + origin.y), IM_COL32(25, 155, 0, 255), 2.0f);
+				}
+			}
+			if (data->points.size() >= 2 && gauss && MinE) {
+				adopt ex1(data->points, "gauss","MinE", ceta);
+
+				for (float i = 0; i < 1.f; i += 0.01) {
+					draw_list->AddLine(ImVec2(ex1.getResult(i)[0] + origin.x, ex1.getResult(i)[1] + origin.y), ImVec2(ex1.getResult(i + 0.01)[0] + origin.x, ex1.getResult(i + 0.01)[1] + origin.y), IM_COL32(25, 155, 0, 255), 2.0f);
+				}
+			}
+
+			for (int n = 0; n < data->points.size(); n += 1) {
+				draw_list->AddCircle(ImVec2(origin.x + data->points[n][0], origin.y + data->points[n][1]), 3, IM_COL32(255, 255, 0, 255), 0,5.f);
+			}
+			/*for (int n = 0; n < data->points.size(); n += 2)
+				draw_list->AddLine(ImVec2(origin.x + data->points[n][0], origin.y + data->points[n][1]), ImVec2(origin.x + data->points[n + 1][0], origin.y + data->points[n + 1][1]), IM_COL32(255, 255, 0, 255), 2.0f);*/
 			draw_list->PopClipRect();
 		}
 
