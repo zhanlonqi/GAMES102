@@ -6,7 +6,7 @@ using namespace Ubpa;
 class adopt {
 public:
 	std::string method;
-	std::string fit_way="interpolation";
+	std::string fit_way;
 	std::vector<pointf2> points;
 	std::vector<double> parameters;
 	std::vector<float> X;
@@ -41,11 +41,9 @@ public:
 		 size = X.size() > max ? max : X.size();
 		
 		for (int i = 0; i < size; i++) {
-			result_x+=parameter_X(i)* base(x, i);
+			result_x += parameter_X(i) * base(x, i);
 			result_y += parameter_Y(i) * base(x, i);
 		}
-
-
 		return pointf2(result_x,result_y);
 	}
 
@@ -55,12 +53,12 @@ private:
 		Eigen::VectorXd temp_y(x.size());
 		for (int i = 0; i < x.size(); i++) {
 			for (int j = 0; j < x.size(); j++) {
-				temp_x(i,j) = base(x[i],j);
+				temp_x(i, j) = base(x[i], j);
 			}
 			temp_y(i) = y[i];
 		}
 		Eigen::VectorXd k(x.size());
-		//k = (temp_x.transpose()*temp_x).inverse()*temp_x.transpose()*temp_y;
+		k = (temp_x.transpose()*temp_x).inverse()*temp_x.transpose()*temp_y;
 		k = temp_x.colPivHouseholderQr().solve(temp_y);
 		return k;
 	}
@@ -88,7 +86,7 @@ private:
 		return k;
 	}
 
-	float base(int i, int j) {
+	float base(float i, int j) {
 		if (method == "exponiential") {
 			return std::pow(i, j);
 		}

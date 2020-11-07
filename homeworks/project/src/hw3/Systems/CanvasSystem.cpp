@@ -8,9 +8,9 @@
 
 #include"mylib.h"
 using namespace Ubpa;
-bool exponiential = false;
+bool exponiential = true;
 bool gauss = false;
-bool interpolation=false;
+bool interpolation=true;
 bool MinE = false;
 int ceta = 1;
 void CanvasSystem::OnUpdate(Ubpa::UECS::Schedule& schedule) {
@@ -102,40 +102,37 @@ void CanvasSystem::OnUpdate(Ubpa::UECS::Schedule& schedule) {
 
 			if (data->points.size() >= 2&&exponiential&&interpolation) {
 				adopt ex(data->points,"exponiential","interpolation",ceta);
-
 				for (float i = 0; i < 1.f ; i += 0.01) {
 					draw_list->AddLine(ImVec2(ex.getResult(i)[0] + origin.x, ex.getResult(i)[1] + origin.y), ImVec2(ex.getResult(i + 0.01)[0] + origin.x, ex.getResult(i + 0.01)[1] + origin.y), IM_COL32(255, 155, 0, 255), 2.0f);
-					//draw_list->AddLine(ImVec2(i *100+ origin.x, ex.getResult(i)[1] + origin.y), ImVec2(i*100+1 + origin.x, ex.getResult(i + 0.01)[1] + origin.y), IM_COL32(255, 255, 0, 255), 2.0f);
-				}
+				}		
 			}
-			if (data->points.size() >= 2 && exponiential&&MinE) {
-				adopt ex(data->points, "exponiential", "MinE",ceta);
-
-				for (float i = 0; i < 1.f; i += 0.01) {
-					draw_list->AddLine(ImVec2(ex.getResult(i)[0] + origin.x, ex.getResult(i)[1] + origin.y), ImVec2(ex.getResult(i + 0.01)[0] + origin.x, ex.getResult(i + 0.01)[1] + origin.y), IM_COL32(255, 155, 0, 255), 2.0f);
-					//draw_list->AddLine(ImVec2(i *100+ origin.x, ex.getResult(i)[1] + origin.y), ImVec2(i*100+1 + origin.x, ex.getResult(i + 0.01)[1] + origin.y), IM_COL32(255, 255, 0, 255), 2.0f);
-				}
-			}
-			if (data->points.size() >= 2 && gauss&&interpolation) {
-				adopt ex1(data->points, "gauss","interpolation",ceta);
-
-				for (float i = 0; i < 1.f; i += 0.01) {
-					draw_list->AddLine(ImVec2(ex1.getResult(i)[0] + origin.x, ex1.getResult(i)[1] + origin.y), ImVec2(ex1.getResult(i + 0.01)[0] + origin.x, ex1.getResult(i + 0.01)[1] + origin.y), IM_COL32(25, 155, 0, 255), 2.0f);
-				}
-			}
-			if (data->points.size() >= 2 && gauss && MinE) {
-				adopt ex1(data->points, "gauss","MinE", ceta);
-
-				for (float i = 0; i < 1.f; i += 0.01) {
-					draw_list->AddLine(ImVec2(ex1.getResult(i)[0] + origin.x, ex1.getResult(i)[1] + origin.y), ImVec2(ex1.getResult(i + 0.01)[0] + origin.x, ex1.getResult(i + 0.01)[1] + origin.y), IM_COL32(25, 155, 0, 255), 2.0f);
-				}
-			}
+	//	if (data->points.size() >= 2 && exponiential&&MinE) {
+	//		adopt ex2(data->points, "exponiential", "MinE",ceta);
+	//	
+	//		for (float i = 0; i < 1.f; i += 0.01) {
+	//			draw_list->AddLine(ImVec2(ex2.getResult(i)[0] + origin.x, ex2.getResult(i)[1] + origin.y), ImVec2(ex2.getResult(i + 0.01)[0] + origin.x, ex2.getResult(i//+0.01)[1] + origin.y), IM_COL32(255, 155, 0, 255), 2.0f);
+	//
+	//		}
+	//	}
+		//if (data->points.size() >= 2 && gauss&&interpolation) {
+		//	adopt ex3(data->points, "gauss","interpolation",ceta);
+		//
+		//	for (float i = 0; i < 1.f; i += 0.01) {
+		//		draw_list->AddLine(ImVec2(ex3.getResult(i)[0] + origin.x, ex3.getResult(i)[1] + origin.y), ImVec2(ex3.getResult(i + /0.01)/[0] + origin.x, ex3.getResult(i + 0.01)[1] + origin.y), IM_COL32(25, 155, 0, 255), 2.0f);
+		//	}
+		//}
+		//if (data->points.size() >= 2 && gauss && MinE) {
+		//	adopt ex4(data->points, "gauss","MinE", ceta);
+		//
+		//	for (float i = 0; i < 1.f; i += 0.01) {
+		//		draw_list->AddLine(ImVec2(ex4.getResult(i)[0] + origin.x, ex4.getResult(i)[1] + origin.y), ImVec2(ex4.getResult(i + /0.01)/[0] + origin.x, ex4.getResult(i + 0.01)[1] + origin.y), IM_COL32(25, 155, 0, 255), 2.0f);
+		//	}
+		//}
 
 			for (int n = 0; n < data->points.size(); n += 1) {
 				draw_list->AddCircle(ImVec2(origin.x + data->points[n][0], origin.y + data->points[n][1]), 3, IM_COL32(255, 255, 0, 255), 0,5.f);
 			}
-			/*for (int n = 0; n < data->points.size(); n += 2)
-				draw_list->AddLine(ImVec2(origin.x + data->points[n][0], origin.y + data->points[n][1]), ImVec2(origin.x + data->points[n + 1][0], origin.y + data->points[n + 1][1]), IM_COL32(255, 255, 0, 255), 2.0f);*/
+
 			draw_list->PopClipRect();
 		}
 
