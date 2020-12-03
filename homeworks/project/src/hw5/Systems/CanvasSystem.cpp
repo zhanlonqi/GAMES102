@@ -6,6 +6,13 @@
 
 using namespace Ubpa;
 
+std::vector<pointf2> chaiukin2(std::vector<pointf2> points, int num);
+std::vector<pointf2> chaiukin3(std::vector<pointf2> points, int num);
+std::vector<pointf2> interpolation(std::vector<pointf2> points, int num);
+bool Chaiukin2 = false;
+bool Chaiukin3 = false;
+bool Interpolation = false;
+int num_iterate;
 void CanvasSystem::OnUpdate(Ubpa::UECS::Schedule& schedule) {
 	schedule.RegisterCommand([](Ubpa::UECS::World* w) {
 		auto data = w->entityMngr.GetSingleton<CanvasData>();
@@ -16,7 +23,12 @@ void CanvasSystem::OnUpdate(Ubpa::UECS::Schedule& schedule) {
 			ImGui::Checkbox("Enable grid", &data->opt_enable_grid);
 			ImGui::Checkbox("Enable context menu", &data->opt_enable_context_menu);
 			ImGui::Text("Mouse Left: drag to add lines,\nMouse Right: drag to scroll, click for context menu.");
-
+			ImGui::DragInt("Num_iterate", &num_iterate, 1, 0, 10, "%d", 0);
+			ImGui::Checkbox("Chaiukin2 ", &Chaiukin2);
+			ImGui::SameLine(0, 0);
+			ImGui::Checkbox("Chaiukin3 ", &Chaiukin3);
+			ImGui::SameLine(0, 0);
+			ImGui::Checkbox("Interpolation ", &Interpolation);
 			// Typically you would use a BeginChild()/EndChild() pair to benefit from a clipping region + own scrolling.
 			// Here we demonstrate that this can be replaced by simple offsetting + custom drawing + PushClipRect/PopClipRect() calls.
 			// To use a child window instead we could use, e.g:
@@ -49,17 +61,9 @@ void CanvasSystem::OnUpdate(Ubpa::UECS::Schedule& schedule) {
 			const pointf2 mouse_pos_in_canvas(io.MousePos.x - origin.x, io.MousePos.y - origin.y);
 
 			// Add first and second point
-			if (is_hovered && !data->adding_line && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+			if (is_hovered  && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 			{
 				data->points.push_back(mouse_pos_in_canvas);
-				data->points.push_back(mouse_pos_in_canvas);
-				data->adding_line = true;
-			}
-			if (data->adding_line)
-			{
-				data->points.back() = mouse_pos_in_canvas;
-				if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
-					data->adding_line = false;
 			}
 
 			// Pan (we use a zero mouse threshold when there's no context menu)
@@ -78,9 +82,9 @@ void CanvasSystem::OnUpdate(Ubpa::UECS::Schedule& schedule) {
 			if (ImGui::BeginPopup("context"))
 			{
 				if (data->adding_line)
-					data->points.resize(data->points.size() - 2);
+					data->points.resize(data->points.size() - 1);
 				data->adding_line = false;
-				if (ImGui::MenuItem("Remove one", NULL, false, data->points.size() > 0)) { data->points.resize(data->points.size() - 2); }
+				if (ImGui::MenuItem("Remove one", NULL, false, data->points.size() > 0)) { data->points.resize(data->points.size() - 1); }
 				if (ImGui::MenuItem("Remove all", NULL, false, data->points.size() > 0)) { data->points.clear(); }
 				ImGui::EndPopup();
 			}
@@ -95,11 +99,92 @@ void CanvasSystem::OnUpdate(Ubpa::UECS::Schedule& schedule) {
 				for (float y = fmodf(data->scrolling[1], GRID_STEP); y < canvas_sz.y; y += GRID_STEP)
 					draw_list->AddLine(ImVec2(canvas_p0.x, canvas_p0.y + y), ImVec2(canvas_p1.x, canvas_p0.y + y), IM_COL32(200, 200, 200, 40));
 			}
-			for (int n = 0; n < data->points.size(); n += 2)
-				draw_list->AddLine(ImVec2(origin.x + data->points[n][0], origin.y + data->points[n][1]), ImVec2(origin.x + data->points[n + 1][0], origin.y + data->points[n + 1][1]), IM_COL32(255, 255, 0, 255), 2.0f);
+			std::vector<pointf2> new_points;
+			std::vector<pointf2> new_points2;
+			std::vector<pointf2> new_points3;
+			if (data->points.size() >= 2) {
+				if(Chaiukin2)
+				new_points = chaiukin2(data->points, num_iterate);
+				if(Chaiukin3)
+				new_points2 = chaiukin3(data->points, num_iterate);
+				if (Interpolation)
+					new_points3 = interpolation(data->points, num_iterate);
+			}
+			for (int n = 0; n < data->points.size()&&data->points.size()>=1 ; n += 1) {
+				draw_list->AddCircle(ImVec2(origin.x + data->points[n][0], origin.y + data->points[n][1]), 3, IM_COL32(255, 25, 0, 255), 0, 2);
+			}
+
+
+			for (int n = 0; n < new_points.size(); n++) {
+				draw_list->AddCircle(ImVec2(origin.x + new_points[n][0], origin.y + new_points[n][1]), 3, IM_COL32(255, 255, 0, 255), 0, 5);
+			}
+			for (int n = 0; n < new_points2.size(); n++) {
+				draw_list->AddCircle(ImVec2(origin.x + new_points2[n][0], origin.y + new_points2[n][1]), 3, IM_COL32(255, 255, 0, 255), 0, 5);
+			}
+			for (int n = 0; n < new_points3.size(); n++) {
+				draw_list->AddCircle(ImVec2(origin.x + new_points3[n][0], origin.y + new_points3[n][1]), 3, IM_COL32(255, 255, 0, 255), 0, 5);
+			}
+
+
+			for (int n = 0; n < new_points.size() - 1 && data->points.size() >= 2&&Chaiukin2; n++) {
+				draw_list->AddLine(ImVec2(origin.x +new_points[n][0], origin.y + new_points[n][1]), ImVec2(origin.x + new_points[n + 1][0], origin.y + new_points[n + 1][1]), IM_COL32(255, 0, 255, 255), 2);
+			}
+			for (int n = 0; n < new_points2.size() - 1 && data->points.size() >= 2&&Chaiukin3; n++) {
+				draw_list->AddLine(ImVec2(origin.x + new_points2[n][0], origin.y + new_points2[n][1]), ImVec2(origin.x + new_points2[n + 1][0], origin.y + new_points2[n + 1][1]), IM_COL32(255, 50, 25, 255), 2);
+			}
+			for (int n = 0; n < new_points3.size() - 1 && data->points.size() >= 4 && Interpolation; n++) {
+				draw_list->AddLine(ImVec2(origin.x + new_points3[n][0], origin.y + new_points3[n][1]), ImVec2(origin.x + new_points3[n + 1][0], origin.y + new_points3[n + 1][1]), IM_COL32(155, 1050, 25, 255), 2);
+			}
+			
 			draw_list->PopClipRect();
 		}
 
 		ImGui::End();
 	});
+}
+
+std::vector<pointf2> chaiukin2(std::vector<pointf2> points, int num) {
+	if (num == 0) {
+		return points;
+	}
+	std::vector<pointf2> new_points;
+	for (int i = 0; i < points.size()-1; i++) {
+		new_points.push_back(pointf2(points[i][0] * 0.75 + points[i + 1][0] * 0.25, points[i][1] * 0.75 + points[i + 1][1] * 0.25));
+		new_points.push_back(pointf2(points[i+1][0] * 0.75 + points[i ][0] * 0.25, points[i+1][1] * 0.75 + points[i ][1] * 0.25));
+	}
+	return chaiukin2(new_points, num - 1);
+}
+
+std::vector<pointf2> chaiukin3(std::vector<pointf2> points, int num) {
+	if (num == 0) {
+		return points;
+	}
+	std::vector<pointf2>  new_points;
+	new_points.push_back(points[0]);
+	for (int i = 1; i < points.size()-1; i++)
+	{
+		new_points.push_back(pointf2(0.5 * points[i - 1][0] + 0.5 * points[i][0], 0.5 * points[i-1][1] + 0.5 * points[i][1]));
+		new_points.push_back(pointf2(0.125 * points[i - 1][0] + 0.75 * points[i][0] + 0.125 * points[i+1][0], 0.125 * points[i - 1][1] + 0.75 * points[i][1] + 0.125 * points[i+1][1]));
+	}
+	new_points.push_back(points[points.size() - 1]);
+	return chaiukin3(new_points, num - 1);
+}
+
+std::vector<pointf2> interpolation(std::vector<pointf2> points, int num) {
+	if (num == 0||points.size()<4) {
+		return points;
+	}
+	std::vector<pointf2> new_points;
+		new_points.push_back(points[0]);
+	for (int i = 1; i < points.size() - 2;i+=1) {
+		new_points.push_back(points[i]);
+		pointf2 mid = pointf2(points[i ][0] * 0.5 + points[i + 1][0] * 0.5, points[i ][1] * 0.5 + points[i + 1][1] * 0.5);
+		pointf2 mid2 = pointf2(points[i - 1][0] * 0.5 + points[i + 2][0] * 0.5, points[i - 1][1] * 0.5 + points[i + 2][1] * 0.5);
+		pointf2 dir = pointf2((mid[0] - mid2[0])*0.1, (mid[1] - mid2[1])*0.1);
+		pointf2 point = pointf2(mid[0] + dir[0], mid[1] + dir[1]);
+		new_points.push_back(point);
+	}
+	new_points.push_back(points[points.size() - 2]);
+	new_points.push_back(points[points.size() - 1]);
+	return interpolation(new_points, num - 1);
 }

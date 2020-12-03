@@ -5,6 +5,8 @@ lib/
 _deps/
 bin/logs/
 assets/
+reports/
+
 
 *Config.h
 
