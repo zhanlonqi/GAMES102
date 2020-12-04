@@ -14,8 +14,18 @@ struct Ubpa::USRefl::TypeInfo<CanvasData> :
     static constexpr AttrList attrs = {};
     static constexpr FieldList fields = {
         Field {TSTR("points"), &Type::points},
+        Field {TSTR("assistant_points"), &Type::assistant_points},
+        Field {TSTR("M"), &Type::M},
+        Field {TSTR("parameter_x"), &Type::parameter_x},
+        Field {TSTR("parameter_y"), &Type::parameter_y},
         Field {TSTR("scrolling"), &Type::scrolling, AttrList {
             Attr {TSTR(UMeta::initializer), []()->Ubpa::valf2{ return { 0.f,0.f }; }},
+        }},
+        Field {TSTR("changing_point"), &Type::changing_point, AttrList {
+            Attr {TSTR(UMeta::initializer), []()->bool{ return { false }; }},
+        }},
+        Field {TSTR("changing_assistant_point"), &Type::changing_assistant_point, AttrList {
+            Attr {TSTR(UMeta::initializer), []()->bool{ return { false }; }},
         }},
         Field {TSTR("opt_enable_grid"), &Type::opt_enable_grid, AttrList {
             Attr {TSTR(UMeta::initializer), []()->bool{ return { true }; }},
@@ -25,6 +35,43 @@ struct Ubpa::USRefl::TypeInfo<CanvasData> :
         }},
         Field {TSTR("adding_line"), &Type::adding_line, AttrList {
             Attr {TSTR(UMeta::initializer), []()->bool{ return { false }; }},
+        }},
+        Field {TSTR("changing_G"), &Type::changing_G, AttrList {
+            Attr {TSTR(UMeta::initializer), []()->bool{ return { false }; }},
+        }},
+        Field {TSTR("index"), &Type::index, AttrList {
+            Attr {TSTR(UMeta::initializer), []()->int{ return { -1 }; }},
+        }},
+        Field {TSTR("assistant_index"), &Type::assistant_index, AttrList {
+            Attr {TSTR(UMeta::initializer), []()->int{ return { -1 }; }},
+        }},
+        Field {TSTR("parent"), &Type::parent},
+        Field {TSTR("ceta"), &Type::ceta, AttrList {
+            Attr {TSTR(UMeta::initializer), []()->int{ return { 1 }; }},
+        }},
+        Field {TSTR("max"), &Type::max, AttrList {
+            Attr {TSTR(UMeta::initializer), []()->int{ return { 5 }; }},
+        }},
+        Field {TSTR("lambda"), &Type::lambda, AttrList {
+            Attr {TSTR(UMeta::initializer), []()->float{ return { 0 }; }},
+        }},
+        Field {TSTR("derivative_positive"), &Type::derivative_positive},
+        Field {TSTR("derivative_negative"), &Type::derivative_negative},
+        Field {TSTR("derivative_x_pos"), &Type::derivative_x_pos},
+        Field {TSTR("derivative_x_neg"), &Type::derivative_x_neg},
+        Field {TSTR("derivative_y_pos"), &Type::derivative_y_pos},
+        Field {TSTR("derivative_y_neg"), &Type::derivative_y_neg},
+        Field {TSTR("continuity"), &Type::continuity, AttrList {
+            Attr {TSTR(UMeta::initializer), []()->std::map<std::string, bool>{ return { std::pair<std::string,bool>("G2",true),std::pair<std::string,bool>("G1",true)  }; }},
+        }},
+        Field {TSTR("fit_ways"), &Type::fit_ways, AttrList {
+            Attr {TSTR(UMeta::initializer), []()->std::map<std::string, bool >{ return { std::pair<std::string,bool>("interpolation",false),std::pair<std::string,bool>("MinE",false),std::pair<std::string,bool>("Ridge",false),std::pair<std::string,bool>("Cubic_spline",false) }; }},
+        }},
+        Field {TSTR("bases"), &Type::bases, AttrList {
+            Attr {TSTR(UMeta::initializer), []()->std::map<std::string, bool >{ return { std::pair<std::string,bool>("exponiential",false),std::pair<std::string,bool>("gauss",false) }; }},
+        }},
+        Field {TSTR("parameterization"), &Type::parameterization, AttrList {
+            Attr {TSTR(UMeta::initializer), []()->std::map<std::string, bool>{ return { std::pair<std::string,bool>("Equidistant",false),std::pair<std::string,bool>("Chordal",false) }; }},
         }},
     };
 };
